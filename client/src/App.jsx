@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import AlertDashboardController from './pages/AlertDashboard/AlertDashboardController.jsx'
+import LoginController from './pages/Login/LoginController.jsx'
 
 // Teammates: add a page
 // 1. Create src/pages/YourPage/YourPageController.jsx (and siblings).
@@ -14,43 +15,53 @@ import AlertDashboardController from './pages/AlertDashboard/AlertDashboardContr
 const PAGE = {
   home: 'home',
   alerts: 'alerts',
-}
-
-function renderActivePage(activePage) {
-  switch (activePage) {
-    case PAGE.home:
-      return (
-        <>
-          <p>SFWRENG 3A04 Deliverable 4</p>
-          <ul>
-            <li>Angad Chhabra</li>
-            <li>Jerry Jing</li>
-            <li>Danyal Yousuf</li>
-            <li>Kristian Diana</li>
-          </ul>
-        </>
-      )
-    case PAGE.alerts:
-      return <AlertDashboardController />
-    default:
-      return null
-  }
+  login: 'login',
 }
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(true)
   const [activePage, setActivePage] = useState(PAGE.home)
 
-  if (!isAuthenticated) {
-    return (
-      <main>
-        <p>Login / Sign up (placeholder)</p>
-        <button type="button" onClick={() => setIsAuthenticated(true)}>
-          Sign in (demo)
-        </button>
-      </main>
-    )
+  function renderActivePage(activePage) {
+    switch (activePage) {
+      case PAGE.home:
+        return (
+          <>
+            <p>SFWRENG 3A04 Deliverable 4</p>
+            <ul>
+              <li>Angad Chhabra</li>
+              <li>Jerry Jing</li>
+              <li>Danyal Yousuf</li>
+              <li>Kristian Diana</li>
+            </ul>
+          </>
+        )
+      case PAGE.alerts:
+        return <AlertDashboardController />
+      case PAGE.login:
+        return <LoginController
+          onLoginSuccess = {() => {
+            console.log("displaying page after login success");
+            setActivePage(PAGE.alerts);
+            setIsAuthenticated(true);
+          }}
+        />
+      
+      default:
+        return null
+    }
   }
+
+  // if (!isAuthenticated) {
+  //   return (
+  //     <main>
+  //       <p>Login / Sign up (placeholder)</p>
+  //       <button type="button" onClick={() => setIsAuthenticated(true)}>
+  //         Sign in (demo)
+  //       </button>
+  //     </main>
+  //   )
+  // }
 
   return (
     <>
@@ -62,9 +73,22 @@ function App() {
           <button type="button" onClick={() => setActivePage(PAGE.alerts)}>
             Alert Dashboard
           </button>
-          <button type="button" onClick={() => setIsAuthenticated(false)}>
-            Sign out (demo)
-          </button>
+          {isAuthenticated && (
+            <button type="button" onClick={() => { 
+              setIsAuthenticated(false)
+              setActivePage(PAGE.login)
+            }}>
+              Sign out
+            </button>
+          )}
+          {!isAuthenticated && (
+            <button type="button" onClick={() => { 
+              setIsAuthenticated(false)
+              setActivePage(PAGE.login)
+            }}>
+              Log In
+            </button>
+          )}
         </nav>
       </header>
       <main>{renderActivePage(activePage)}</main>
