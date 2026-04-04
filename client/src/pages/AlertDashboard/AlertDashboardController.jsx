@@ -3,8 +3,8 @@ import {
   getAlertDashboardState,
   subscribeAlertDashboard,
   mergeAlertsFromServer,
-} from './alertDashboardStore.js'
-import AlertDashboardView from './AlertDashboardView.jsx'
+} from './AlertDashboardAbstraction.js'
+import AlertDashboardPresentation from './AlertDashboardPresentation.jsx'
 
 export default function AlertDashboardController() {
   const [, setSnapshot] = useState(getAlertDashboardState)
@@ -15,11 +15,11 @@ export default function AlertDashboardController() {
     // Call Flask when wired: e.g. fetch(`${import.meta.env.VITE_API_URL}/api/operator/alerts`)
     //   .then((r) => r.json())
     //   .then((body) => mergeAlertsFromServer(body))
-    //   .catch(() => setError in store or local state)
+    //   .catch(() => setError in abstraction or local state)
     //
-    // For now, seed empty store once so presentation shows the subscription path.
+    // For now, seed empty state once so presentation shows the subscription path.
     mergeAlertsFromServer({ alerts: [] })
   }, [])
 
-  return <AlertDashboardView title="Alert Dashboard" />
+  return <AlertDashboardPresentation title="Alert Dashboard" />
 }
