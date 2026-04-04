@@ -2,6 +2,7 @@ import { useState } from 'react'
 import AlertDashboardController from './pages/AlertDashboard/AlertDashboardController.jsx'
 import LoginController from './pages/Login/LoginController.jsx'
 import SignupController from './pages/Signup/SignupController.jsx'
+import AdvisoryController from './pages/AdvisoryForm/AdvisoryController.jsx'
 import ProfilePresentation from './pages/ProfilePresentation.jsx'
 
 // Teammates: add a page
@@ -17,6 +18,7 @@ import ProfilePresentation from './pages/ProfilePresentation.jsx'
 const PAGE = {
   home: 'home',
   alerts: 'alerts',
+  advisory: 'advisory',
   login: 'login',
   signup: 'signup',
   profile: 'profile',
@@ -42,6 +44,8 @@ function App() {
         )
       case PAGE.alerts:
         return <AlertDashboardController />
+      case PAGE.advisory:
+        return <AdvisoryController />
       case PAGE.login:
         return <LoginController
           onLoginSuccess = {() => {
@@ -92,6 +96,9 @@ function App() {
           </button>
           <button type="button" onClick={() => setActivePage(PAGE.alerts)}>
             Alert Dashboard
+          </button>
+          <button type="button" onClick={() => setActivePage(PAGE.advisory)}>
+            Submit Advisory Form
           </button>
           {isAuthenticated && (
             <div>
