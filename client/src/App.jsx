@@ -2,6 +2,7 @@ import { useState } from 'react'
 import AlertDashboardController from './pages/AlertDashboard/AlertDashboardController.jsx'
 import LoginController from './pages/Login/LoginController.jsx'
 import SignupController from './pages/Signup/SignupController.jsx'
+import ProfilePresentation from './pages/ProfilePresentation.jsx'
 
 // Teammates: add a page
 // 1. Create src/pages/YourPage/YourPageController.jsx (and siblings).
@@ -18,6 +19,7 @@ const PAGE = {
   alerts: 'alerts',
   login: 'login',
   signup: 'signup',
+  profile: 'profile',
 }
 
 function App() {
@@ -62,6 +64,8 @@ function App() {
             setActivePage(PAGE.login);
           }}
         />
+      case PAGE.profile:
+        return <ProfilePresentation/>
       
       default:
         return null
@@ -90,12 +94,17 @@ function App() {
             Alert Dashboard
           </button>
           {isAuthenticated && (
-            <button type="button" onClick={() => { 
-              setIsAuthenticated(false)
-              setActivePage(PAGE.login)
-            }}>
-              Sign out
-            </button>
+            <div>
+              <button type="button" onClick={() => setActivePage(PAGE.profile)}>
+              Profile
+              </button>
+              <button type="button" onClick={() => { 
+                setIsAuthenticated(false)
+                setActivePage(PAGE.login)
+              }}>
+                Sign out
+              </button>
+            </div>
           )}
           {!isAuthenticated && (
             <button type="button" onClick={() => { 
