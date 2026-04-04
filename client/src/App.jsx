@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import AlertDashboardController from './pages/AlertDashboard/AlertDashboardController.jsx'
 import LoginController from './pages/Login/LoginController.jsx'
+import SignupController from './pages/Signup/SignupController.jsx'
 
 // Teammates: add a page
 // 1. Create src/pages/YourPage/YourPageController.jsx (and siblings).
@@ -16,6 +17,7 @@ const PAGE = {
   home: 'home',
   alerts: 'alerts',
   login: 'login',
+  signup: 'signup',
 }
 
 function App() {
@@ -44,6 +46,20 @@ function App() {
             console.log("displaying page after login success");
             setActivePage(PAGE.alerts);
             setIsAuthenticated(true);
+          }}
+          onGoToSignup = {() => {
+            setActivePage(PAGE.signup);
+          }}
+        />
+      case PAGE.signup:
+        return <SignupController
+          onSignupSuccess = {() => {
+            console.log("displaying page after signup success");
+            setActivePage(PAGE.alerts);
+            setIsAuthenticated(true);
+          }}
+          onGoToLogin = {() => {
+            setActivePage(PAGE.login);
           }}
         />
       

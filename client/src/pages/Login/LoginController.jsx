@@ -10,7 +10,7 @@ import { useState } from 'react';
 import { loginAbstraction } from './LoginAbstraction.js';
 import LoginPresentation from './LoginPresentation.jsx';
 
-export default function LoginController({ onLoginSuccess }) {
+export default function LoginController({ onLoginSuccess, onGoToSignup }) {
     const [error, setError] = useState(null);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -41,6 +41,7 @@ export default function LoginController({ onLoginSuccess }) {
             setPassword={setPassword}
             handleLogin={handleLogin}
             error={error}
+            onGoToSignup={onGoToSignup}
         />
     );
 }

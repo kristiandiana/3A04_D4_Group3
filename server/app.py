@@ -10,7 +10,7 @@ from routes.public_routes import public_bp
 from routes.operator_routes import operator_bp
 from routes.admin_routes import admin_bp
 from routes.sim_routes import sim_bp
-from routes.login_routes import login_bp
+from routes.account_routes import account_bp
 
 
 def create_app():
@@ -80,7 +80,7 @@ def create_app():
     app.register_blueprint(operator_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(sim_bp)
-    app.register_blueprint(login_bp)
+    app.register_blueprint(account_bp)
 
     @app.route("/")
     def home():
