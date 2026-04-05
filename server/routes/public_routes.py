@@ -9,6 +9,7 @@ PUBLIC_RATE_LIMIT = 60
 PUBLIC_RATE_WINDOW_SECONDS = 60
 _public_request_log = defaultdict(deque)
 VALID_ALERT_STATUSES = {"active", "acknowledged", "resolved"}
+VALID_WINDOW_TYPES = {"5min", "hourly"}
 
 
 def _serialize_aggregate(aggregate):
@@ -20,6 +21,9 @@ def _serialize_aggregate(aggregate):
         "maximum": aggregate.maximum,
         "count": aggregate.count,
         "timestamp": aggregate.timestamp.isoformat(),
+        "window_type": aggregate.window_type,
+        "window_start": aggregate.window_start.isoformat() if aggregate.window_start else None,
+        "window_end": aggregate.window_end.isoformat() if aggregate.window_end else None,
     }
 
 
@@ -82,12 +86,21 @@ def get_metrics():
     repo = current_app.config["repo"]
     zone_id = request.args.get("zone_id")
     metric_type = request.args.get("metric_type")
+    window_type = request.args.get("window_type", "5min")
 
     limit, error_response, status_code = _parse_limit()
     if error_response:
         return error_response, status_code
 
-    aggregates = repo.get_aggregates(zone_id=zone_id, metric_type=metric_type, limit=limit)
+    if window_type not in VALID_WINDOW_TYPES:
+        return jsonify({"error": f"window_type must be one of {sorted(VALID_WINDOW_TYPES)}"}), 400
+
+    aggregates = repo.get_aggregates(
+        zone_id=zone_id,
+        metric_type=metric_type,
+        window_type=window_type,
+        limit=limit,
+    )
     return jsonify([_serialize_aggregate(aggregate) for aggregate in aggregates])
 
 
@@ -114,13 +127,9 @@ def get_zone_summary(zone_id: str):
     if zone_id not in known_zones:
         return jsonify({"error": "Zone not found"}), 404
 
-    latest_metrics = repo.get_latest_metrics_for_zone(zone_id)
     payload = {
         "zone_id": zone_id,
-        "metrics": [
-            _serialize_aggregate(latest_metrics[metric_type])
-            for metric_type in sorted(latest_metrics.keys())
-        ],
+        "metrics": repo.get_zone_summary(zone_id),
         "active_alert_count": len(repo.get_active_alerts(zone_id=zone_id)),
     }
 

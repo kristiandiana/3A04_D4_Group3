@@ -4,6 +4,8 @@ import LoginController from './pages/Login/LoginController.jsx'
 import SignupController from './pages/Signup/SignupController.jsx'
 import AdvisoryController from './pages/AdvisoryForm/AdvisoryController.jsx'
 import ProfilePresentation from './pages/ProfilePresentation.jsx'
+import PublicDisplayController from './pages/PublicDisplay/PublicDisplayController.jsx'
+import { clearSession, loadSession, saveSession } from './lib/auth.js'
 
 // Teammates: add a page
 // 1. Create src/pages/YourPage/YourPageController.jsx (and siblings).
@@ -22,11 +24,15 @@ const PAGE = {
   login: 'login',
   signup: 'signup',
   profile: 'profile',
+  publicDisplay: 'publicDisplay',
 }
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(true)
+  const [session, setSession] = useState(loadSession)
   const [activePage, setActivePage] = useState(PAGE.home)
+  const currentUser = session?.user ?? null
+  const isAuthenticated = Boolean(currentUser)
+  const canUseOperatorPages = currentUser && ['operator', 'admin'].includes(currentUser.role)
 
   function renderActivePage(activePage) {
     switch (activePage) {
@@ -40,18 +46,24 @@ function App() {
               <li>Danyal Yousuf</li>
               <li>Kristian Diana</li>
             </ul>
+            <p>Default admin: <code>admin@scemas.local</code> / <code>Admin123!</code></p>
+            <p>Default operator: <code>operator@scemas.local</code> / <code>Operator123!</code></p>
           </>
         )
       case PAGE.alerts:
-        return <AlertDashboardController />
+        return canUseOperatorPages ? (
+          <AlertDashboardController />
+        ) : (
+          <p>Operator login required to view the alert dashboard.</p>
+        )
       case PAGE.advisory:
         return <AdvisoryController />
       case PAGE.login:
         return <LoginController
-          onLoginSuccess = {() => {
-            console.log("displaying page after login success");
+          onLoginSuccess = {(nextSession) => {
+            saveSession(nextSession)
+            setSession(nextSession)
             setActivePage(PAGE.alerts);
-            setIsAuthenticated(true);
           }}
           onGoToSignup = {() => {
             setActivePage(PAGE.signup);
@@ -59,17 +71,19 @@ function App() {
         />
       case PAGE.signup:
         return <SignupController
-          onSignupSuccess = {() => {
-            console.log("displaying page after signup success");
+          onSignupSuccess = {(nextSession) => {
+            saveSession(nextSession)
+            setSession(nextSession)
             setActivePage(PAGE.alerts);
-            setIsAuthenticated(true);
           }}
           onGoToLogin = {() => {
             setActivePage(PAGE.login);
           }}
         />
       case PAGE.profile:
-        return <ProfilePresentation/>
+        return <ProfilePresentation user={currentUser} />
+      case PAGE.publicDisplay:
+        return <PublicDisplayController />
       
       default:
         return null
@@ -94,11 +108,16 @@ function App() {
           <button type="button" onClick={() => setActivePage(PAGE.home)}>
             Home
           </button>
-          <button type="button" onClick={() => setActivePage(PAGE.alerts)}>
-            Alert Dashboard
-          </button>
+          {canUseOperatorPages && (
+            <button type="button" onClick={() => setActivePage(PAGE.alerts)}>
+              Alert Dashboard
+            </button>
+          )}
           <button type="button" onClick={() => setActivePage(PAGE.advisory)}>
             Submit Advisory Form
+          </button>
+          <button type="button" onClick={() => setActivePage(PAGE.publicDisplay)}>
+            Public Display
           </button>
           {isAuthenticated && (
             <div>
@@ -106,7 +125,8 @@ function App() {
               Profile
               </button>
               <button type="button" onClick={() => { 
-                setIsAuthenticated(false)
+                clearSession()
+                setSession(null)
                 setActivePage(PAGE.login)
               }}>
                 Sign out
@@ -115,7 +135,6 @@ function App() {
           )}
           {!isAuthenticated && (
             <button type="button" onClick={() => { 
-              setIsAuthenticated(false)
               setActivePage(PAGE.login)
             }}>
               Log In

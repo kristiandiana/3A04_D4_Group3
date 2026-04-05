@@ -1,3 +1,5 @@
+import { fetchJson } from '../../lib/api.js'
+
 /*
 SignupAbstraction.js
 
@@ -6,9 +8,8 @@ NOTE: No actual authentication logic is implemented for the scope of this demo.
 */
 
 export const signupAbstraction = async (credentials) => {
-    const res = await fetch('/signup', {
+    return fetchJson('/signup', {
         method: 'POST',
         body: JSON.stringify(credentials),
-    });
-    return res.json();
+    })
 }

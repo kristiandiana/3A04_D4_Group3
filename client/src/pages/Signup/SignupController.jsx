@@ -15,23 +15,17 @@ export default function SignupController({ onSignupSuccess, onGoToLogin }) {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [phoneNum, setPhoneNum] = useState('');
 
     const handleSignup = async (e) => {
         e.preventDefault();
         try {
-            const res = await signupAbstraction({ email, password, name, phoneNum });
+            const res = await signupAbstraction({ email, password, name });
             if (res.success) {
-                console.log("res.success happened");
-                onSignupSuccess();
-                // Handle successful signup, e.g., redirect or store token
-                // For demo purposes, we'll just redirect to the home page
+                onSignupSuccess({ token: res.token, user: res.user });
             } else {
-                console.log("ruh roh raggy");
                 setError(res.message || 'Signup failed');
             }
-        } catch (err) {
-            console.log(err);
+        } catch {
             setError('An error occurred during signup');
         }
     }
@@ -44,8 +38,6 @@ export default function SignupController({ onSignupSuccess, onGoToLogin }) {
             setEmail={setEmail}
             password={password}
             setPassword={setPassword}
-            phoneNum={phoneNum}
-            setPhoneNum={setPhoneNum}
             handleSignup={handleSignup}
             error={error}
             onGoToLogin={onGoToLogin}

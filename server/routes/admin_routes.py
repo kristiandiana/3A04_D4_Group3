@@ -1,5 +1,8 @@
 from flask import Blueprint, jsonify, current_app, request
 
+from auth_utils import get_authenticated_user, require_role
+
+
 admin_bp = Blueprint("admin_bp", __name__)
 
 VALID_COMPARATORS = {">", "<", ">=", "<="}
@@ -73,31 +76,41 @@ def _validate_rule_payload(payload):
 
 
 @admin_bp.route("/admin/audit", methods=["GET"])
+@require_role("admin")
 def get_audit():
     repo = current_app.config["repo"]
-    return jsonify(repo.audit_logs[-100:])
+    return jsonify(repo.get_audit_logs(100))
 
 
 @admin_bp.route("/admin/advisories", methods=["GET"])
+@require_role("admin")
 def get_advisories():
     repo = current_app.config["repo"]
-
-    advisories = []
-    for advisory in repo.advisories:
-        data = advisory.__dict__.copy()
-        data["created_at"] = data["created_at"].isoformat()
-        advisories.append(data)
-
-    return jsonify(advisories)
+    return jsonify(
+        [
+            {
+                "advisory_id": advisory.advisory_id,
+                "plant_name": advisory.plant_name,
+                "zone_id": advisory.zone_id,
+                "metric_type": advisory.metric_type,
+                "message": advisory.message,
+                "created_at": advisory.created_at.isoformat(),
+                "acknowledged": advisory.acknowledged,
+            }
+            for advisory in repo.get_advisories()
+        ]
+    )
 
 
 @admin_bp.route("/admin/rules", methods=["GET"])
+@require_role("admin")
 def get_rules():
     repo = current_app.config["repo"]
     return jsonify([_serialize_rule(rule) for rule in repo.get_all_rules()])
 
 
 @admin_bp.route("/admin/rules", methods=["POST"])
+@require_role("admin")
 def create_rule():
     repo = current_app.config["repo"]
     payload = request.get_json(silent=True)
@@ -107,9 +120,10 @@ def create_rule():
         return jsonify({"error": error}), 400
 
     rule = repo.create_rule(**data)
+    actor = get_authenticated_user()
     repo.add_audit_log(
         "RULE_CREATED",
-        "admin",
+        actor.email,
         (
             f"rule_id={rule.rule_id}, zone={rule.zone_id}, metric={rule.metric_type}, "
             f"comparator={rule.comparator}, threshold={rule.threshold}, severity={rule.severity}"

@@ -9,59 +9,81 @@ pip install -r requirements.txt
 python app.py
 ```
 
-The Flask server runs on `http://127.0.0.1:5000`.
+The backend now persists data in `server/scemas.db` by default. Override it with `SCEMAS_DB_PATH`.
 
-## Demo Flow
+## Default Accounts
 
-1. Start the backend with `python app.py`
-2. Start the client with `npm install` and `npm run dev`
-3. Open the `Public Display` page in the client
-4. Click `Start Feed` to begin the simulated telemetry stream
+- Admin: `admin@scemas.local` / `Admin123!`
+- Operator: `operator@scemas.local` / `Operator123!`
 
-## Public API
+New signups are created with the `operator` role.
 
-The public API is read-only and has a lightweight in-memory rate limit of `60 requests / 60 seconds` per client.
+## Auth / RBAC
 
-- `GET /public/zones`
-  Returns known zones plus currently known metrics and active alert counts.
-- `GET /public/zones/<zone_id>/summary`
-  Returns the latest aggregated metrics for one zone.
-- `GET /public/metrics?zone_id=zone-central&metric_type=aqi&limit=20`
-  Returns recent aggregate samples. All query parameters are optional.
-- `GET /public/alerts?zone_id=zone-central&limit=8`
-  Returns active or acknowledged alerts. Optional `status` values: `active`, `acknowledged`, `resolved`.
+- `POST /login`
+- `POST /signup`
+- `GET /me`
 
-## Operator API
+Protected routes require `Authorization: Bearer <token>`.
 
-- `GET /operator/alerts?limit=25`
-  Returns operator-visible alerts for the dashboard.
-- `POST /operator/alerts/<alert_id>/ack`
-  Acknowledges an active alert.
-- `POST /operator/alerts/<alert_id>/resolve`
-  Resolves an active or acknowledged alert.
+- Operator or admin:
+  - `GET /operator/alerts`
+  - `POST /operator/alerts/<alert_id>/ack`
+  - `POST /operator/alerts/<alert_id>/resolve`
+  - `POST /sim/start`
+  - `POST /sim/stop`
+  - `POST /sim/transport`
+- Admin only:
+  - `GET /admin/audit`
+  - `GET /admin/advisories`
+  - `GET /admin/rules`
+  - `POST /admin/rules`
 
-## Admin API
+## Persistence + Aggregation
 
-- `GET /admin/audit`
-- `GET /admin/advisories`
-- `GET /admin/rules`
-- `POST /admin/rules`
+- Raw telemetry is stored in SQLite in `sensor_readings`
+- Fixed window aggregates are persisted in `aggregated_metrics`
+- Supported aggregate windows:
+  - `5min` for 5-minute averages
+  - `hourly` for hourly maximum/history views
 
-Example rule payload:
+Public metrics endpoint example:
+
+```bash
+curl "http://127.0.0.1:5000/public/metrics?zone_id=zone-central&window_type=hourly&limit=10"
+```
+
+Zone summary example:
+
+```bash
+curl "http://127.0.0.1:5000/public/zones/zone-central/summary"
+```
+
+## MQTT Ingestion
+
+MQTT ingestion is optional and disabled by default unless configured.
+
+Environment variables:
+
+- `SCEMAS_MQTT_ENABLED=true`
+- `SCEMAS_MQTT_BROKER_HOST=127.0.0.1`
+- `SCEMAS_MQTT_BROKER_PORT=1883`
+- `SCEMAS_MQTT_TOPIC=scemas/readings`
+- `SCEMAS_MQTT_USERNAME=...`
+- `SCEMAS_MQTT_PASSWORD=...`
+- `SCEMAS_SIM_TRANSPORT=direct` or `mqtt`
+
+Expected MQTT JSON payload:
 
 ```json
 {
+  "sensor_id": "aq-001",
   "zone_id": "zone-central",
-  "metric_type": "humidity",
-  "threshold": 75,
-  "comparator": ">",
-  "severity": "warning",
-  "enabled": true
+  "metric_type": "aqi",
+  "value": 142.5,
+  "unit": "index",
+  "timestamp": "2026-04-05T12:00:00"
 }
 ```
 
-## Simulation API
-
-- `POST /sim/start`
-- `POST /sim/stop`
-- `GET /sim/status`
+Use `GET /sim/status` to inspect simulator state plus MQTT subscriber status.

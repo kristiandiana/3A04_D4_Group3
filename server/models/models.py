@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
 
-@dataclass #create data class because we are just storing data, prevents need to rewrite init etc
+@dataclass
 class SensorReading:
     sensor_id: str
     zone_id: str
@@ -20,6 +20,9 @@ class AggregatedMetric:
     maximum: float
     count: int
     timestamp: datetime
+    window_type: str = "rolling"
+    window_start: Optional[datetime] = None
+    window_end: Optional[datetime] = None
 
 @dataclass
 class AlertRule:
@@ -56,4 +59,13 @@ class Advisory:
     message: str
     created_at: datetime
     acknowledged: bool = False
-    
+
+
+@dataclass
+class User:
+    user_id: int
+    name: str
+    email: str
+    password_hash: str
+    role: str
+    created_at: datetime

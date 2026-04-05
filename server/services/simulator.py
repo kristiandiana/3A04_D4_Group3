@@ -9,10 +9,12 @@ from services.blackboard import Blackboard
 
 
 class SensorSimulator:
-    def __init__(self, blackboard: Blackboard) -> None:
+    def __init__(self, blackboard: Blackboard, mqtt_publisher=None, transport: str = "direct") -> None:
         self.blackboard = blackboard
+        self.mqtt_publisher = mqtt_publisher
         self.running = False
         self.thread = None
+        self.transport = transport
 
         self.sensors: List[Dict] = [
             {"sensor_id": "aq-001", "zone_id": "zone-north", "metric_type": "aqi", "unit": "index"},
@@ -33,11 +35,19 @@ class SensorSimulator:
     def stop(self) -> None:
         self.running = False
 
+    def set_transport(self, transport: str) -> None:
+        self.transport = transport
+
     def _run_loop(self) -> None:
         while self.running:
             for sensor in self.sensors:
                 reading = self._generate_reading(sensor)
-                self.blackboard.ingest_reading(reading)
+                published = False
+                if self.transport == "mqtt" and self.mqtt_publisher:
+                    published = self.mqtt_publisher(reading)
+
+                if not published:
+                    self.blackboard.ingest_reading(reading)
             time.sleep(2)
 
     def _generate_reading(self, sensor: Dict) -> SensorReading:

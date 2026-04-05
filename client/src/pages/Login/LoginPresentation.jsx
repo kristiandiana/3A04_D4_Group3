@@ -25,6 +25,7 @@ export default function LoginPresentation({ email, setEmail, password, setPasswo
         />
         <button type="submit">Login</button>
       </form>
+      {error && <p>{error}</p>}
       <a href="#" onClick={(e) => {
           e.preventDefault();
           onGoToSignup();

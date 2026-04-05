@@ -1,11 +1,13 @@
-/**
- * Alert Dashboard abstraction: holds client-side state and notifies subscribers
- * when it changes so the UI can re-render immediately.
- */
 let listeners = new Set()
 
 const initialState = {
   alerts: [],
+  loading: false,
+  error: '',
+  actingAlertId: null,
+  simulationRunning: false,
+  simulationTransport: 'direct',
+  mqttStatus: null,
   lastUpdatedAt: null,
 }
 
@@ -30,10 +32,31 @@ export function setAlertDashboardState(partial) {
   notify()
 }
 
-/** Placeholder for normalizing Flask JSON into `alerts` + timestamps. */
-export function mergeAlertsFromServer(payload) {
+export function mergeAlertDashboardState(payload) {
+  const alerts = Array.isArray(payload?.alerts) ? payload.alerts : []
+
   setAlertDashboardState({
-    alerts: Array.isArray(payload?.alerts) ? payload.alerts : [],
+    alerts,
+    simulationRunning: Boolean(payload?.simulationRunning),
+    simulationTransport: payload?.simulationTransport ?? 'direct',
+    mqttStatus: payload?.mqttStatus ?? null,
+    loading: false,
+    error: '',
     lastUpdatedAt: Date.now(),
   })
+}
+
+export function setAlertDashboardLoading(loading) {
+  setAlertDashboardState({ loading })
+}
+
+export function setAlertDashboardError(error) {
+  setAlertDashboardState({
+    error,
+    loading: false,
+  })
+}
+
+export function setActingAlertId(actingAlertId) {
+  setAlertDashboardState({ actingAlertId })
 }

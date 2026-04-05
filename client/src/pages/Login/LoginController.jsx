@@ -20,15 +20,11 @@ export default function LoginController({ onLoginSuccess, onGoToSignup }) {
         try {
             const res = await loginAbstraction({ email, password });
             if (res.success) {
-                console.log("res.success happened");
-                onLoginSuccess();
-                // Handle successful login, e.g., redirect or store token
-                // For demo purposes, we'll just redirect to the home page
+                onLoginSuccess({ token: res.token, user: res.user });
             } else {
-                console.log("ruh roh raggy");
                 setError(res.message || 'Login failed');
             }
-        } catch (err) {
+        } catch {
             setError('An error occurred during login');
         }
     }

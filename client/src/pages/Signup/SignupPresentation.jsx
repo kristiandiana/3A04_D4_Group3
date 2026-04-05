@@ -7,7 +7,7 @@ NOTE: No actual authentication logic is implemented for the scope of this demo.
 
 import SupportPresentation from "../SupportPresentation.jsx"
 
-export default function SignupPresentation({name, setName, email, setEmail, password, setPassword, phoneNum, setPhoneNum, handleSignup, error, onGoToLogin}) {
+export default function SignupPresentation({name, setName, email, setEmail, password, setPassword, handleSignup, error, onGoToLogin}) {
     return (
         <div>
             <form onSubmit={handleSignup}>
@@ -24,12 +24,6 @@ export default function SignupPresentation({name, setName, email, setEmail, pass
                 onChange={(e) => setEmail(e.target.value)}
                 />
                 <input
-                type="tel"
-                placeholder="Phone Number"
-                value={phoneNum}
-                onChange={(e) => setPhoneNum(e.target.value)}
-                />
-                <input
                 type="password"
                 placeholder="Password"
                 value={password}
@@ -37,6 +31,7 @@ export default function SignupPresentation({name, setName, email, setEmail, pass
                 />
                 <button type="submit">Sign Up</button>
             </form>
+            {error && <p>{error}</p>}
             <a href="#" onClick={(e) => {
                 e.preventDefault();
                 onGoToLogin();

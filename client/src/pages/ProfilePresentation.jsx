@@ -1,15 +1,18 @@
-/*
-    ProfilePresentation.jsx
+export default function ProfilePresentation({ user }) {
+  if (!user) {
+    return <p>No active session.</p>
+  }
 
-    Contains the UI for the profile page.
-    NOTE: This demo does not store user information, so the profile page is static and does not reflect actual user data.
-*/
-
-export default function ProfilePresentation() {
-    return (
+  return (
+    <section className="page-shell">
+      <div className="panel-header">
         <div>
-            <h2>John Doe</h2>
-            <p>E-mail: jdoe@gmail.com</p>
+          <p className="eyebrow">Authenticated Profile</p>
+          <h2>{user.name}</h2>
+          <p className="muted-copy">{user.email}</p>
         </div>
-    )
+        <span className="status-pill status-live">{user.role}</span>
+      </div>
+    </section>
+  )
 }

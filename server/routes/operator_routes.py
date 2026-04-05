@@ -1,5 +1,7 @@
-from datetime import datetime
 from flask import Blueprint, jsonify, current_app, request
+
+from auth_utils import get_authenticated_user, require_role
+
 
 operator_bp = Blueprint("operator_bp", __name__)
 
@@ -23,6 +25,7 @@ def _serialize_alert(alert):
 
 
 @operator_bp.route("/operator/alerts", methods=["GET"])
+@require_role("operator", "admin")
 def get_operator_alerts():
     repo = current_app.config["repo"]
     zone_id = request.args.get("zone_id")
@@ -46,8 +49,10 @@ def get_operator_alerts():
 
 
 @operator_bp.route("/operator/alerts/<int:alert_id>/ack", methods=["POST"])
+@require_role("operator", "admin")
 def acknowledge_alert(alert_id: int):
     repo = current_app.config["repo"]
+    actor = get_authenticated_user()
     alert = repo.get_alert_by_id(alert_id)
 
     if not alert:
@@ -56,17 +61,17 @@ def acknowledge_alert(alert_id: int):
     if alert.status != "active":
         return jsonify({"error": "Only active alerts can be acknowledged"}), 400
 
-    alert.status = "acknowledged"
-    alert.acknowledged_by = "operator1"
-    alert.acknowledged_at = datetime.utcnow()
+    repo.update_alert_acknowledged(alert_id, actor.email)
 
-    repo.add_audit_log("ALERT_ACKNOWLEDGED", "operator1", f"alert_id={alert_id}")
+    repo.add_audit_log("ALERT_ACKNOWLEDGED", actor.email, f"alert_id={alert_id}")
     return jsonify({"status": "acknowledged", "alert_id": alert_id})
 
 
 @operator_bp.route("/operator/alerts/<int:alert_id>/resolve", methods=["POST"])
+@require_role("operator", "admin")
 def resolve_alert(alert_id: int):
     repo = current_app.config["repo"]
+    actor = get_authenticated_user()
     alert = repo.get_alert_by_id(alert_id)
 
     if not alert:
@@ -75,9 +80,7 @@ def resolve_alert(alert_id: int):
     if alert.status not in ("active", "acknowledged"):
         return jsonify({"error": "Alert cannot be resolved"}), 400
 
-    alert.status = "resolved"
-    alert.resolved_by = "operator1"
-    alert.resolved_at = datetime.utcnow()
+    repo.update_alert_resolved(alert_id, actor.email)
 
-    repo.add_audit_log("ALERT_RESOLVED", "operator1", f"alert_id={alert_id}")
+    repo.add_audit_log("ALERT_RESOLVED", actor.email, f"alert_id={alert_id}")
     return jsonify({"status": "resolved", "alert_id": alert_id})
