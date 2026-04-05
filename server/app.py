@@ -97,7 +97,8 @@ def create_app():
                 ],
                 "admin": [
                     "/admin/audit",
-                    "/admin/advisories"
+                    "/admin/advisories",
+                    "/admin/rules"
                 ],
                 "simulation": [
                     "/sim/start",
