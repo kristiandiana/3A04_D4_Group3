@@ -64,24 +64,14 @@ export default function AlertDashboardController() {
       advisories = Array.isArray(advRes.data) ? advRes.data : STUB_ADVISORIES
       if (advRes.usedStub) stubFlags.advisories = true
 
-      // TODO: replace when GET /admin/rules exists
-      const rulesRes = await fetch('/admin/rules')
-      let baseRules = STUB_ALERT_RULES
-      if (rulesRes.ok) {
-        const body = await rulesRes.json()
-        baseRules = Array.isArray(body)
-          ? body
-          : Array.isArray(body?.rules)
-            ? body.rules
-            : STUB_ALERT_RULES
-      } else {
-        stubFlags.rules = true
-      }
-      const merged = [...baseRules]
-      for (const r of previous.rules) {
-        if (!merged.some((b) => b.rule_id === r.rule_id)) merged.push(r)
-      }
-      rules = merged
+      const rulesRes = await fetchJsonOrStub('/admin/rules', STUB_ALERT_RULES)
+      const body = rulesRes.data
+      rules = Array.isArray(body)
+        ? body
+        : Array.isArray(body?.rules)
+          ? body.rules
+          : STUB_ALERT_RULES
+      if (rulesRes.usedStub) stubFlags.rules = true
     }
 
     setAlertDashboardState({
@@ -123,24 +113,58 @@ export default function AlertDashboardController() {
   }, [runPoll])
 
   const startSim = useCallback(async () => {
-    await fetchJsonOrStub('/sim/start', { status: 'stub' })
-    await runPoll()
+    try {
+      const res = await fetch('/sim/start', { method: 'POST' })
+      if (!res.ok) return
+      await runPoll()
+    } catch {
+      setAlertDashboardState({ error: 'Simulation start failed' })
+    }
   }, [runPoll])
 
   const stopSim = useCallback(async () => {
-    await fetchJsonOrStub('/sim/stop', { status: 'stub' })
-    await runPoll()
+    try {
+      const res = await fetch('/sim/stop', { method: 'POST' })
+      if (!res.ok) return
+      await runPoll()
+    } catch {
+      setAlertDashboardState({ error: 'Simulation stop failed' })
+    }
   }, [runPoll])
 
-  /** Client-only rule row until POST /admin/rules exists */
-  const addRuleLocal = useCallback((rule) => {
-    const prev = getAlertDashboardState().rules
-    const nextId =
-      prev.length > 0 ? Math.max(...prev.map((r) => r.rule_id ?? 0)) + 1 : 1
-    setAlertDashboardState({
-      rules: [...prev, { ...rule, rule_id: nextId }],
-    })
-  }, [])
+  const addRule = useCallback(
+    async (rule) => {
+      try {
+        const res = await fetch('/admin/rules', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            zone_id: rule.zone_id,
+            metric_type: rule.metric_type,
+            threshold: rule.threshold,
+            comparator: rule.comparator,
+            severity: rule.severity,
+            enabled: rule.enabled,
+          }),
+        })
+        if (!res.ok) {
+          let msg = 'Add rule failed'
+          try {
+            const errBody = await res.json()
+            if (errBody?.error) msg = errBody.error
+          } catch {
+            /* ignore */
+          }
+          setAlertDashboardState({ error: msg })
+          return
+        }
+        await runPoll()
+      } catch {
+        setAlertDashboardState({ error: 'Add rule failed' })
+      }
+    },
+    [runPoll]
+  )
 
   return (
     <AlertDashboardPresentation
@@ -151,7 +175,7 @@ export default function AlertDashboardController() {
       onResolve={resolveAlert}
       onStartSim={startSim}
       onStopSim={stopSim}
-      onAddRuleLocal={addRuleLocal}
+      onAddRule={addRule}
     />
   )
 }

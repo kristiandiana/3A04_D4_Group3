@@ -19,7 +19,7 @@ export default function AlertDashboardPresentation({
   onResolve,
   onStartSim,
   onStopSim,
-  onAddRuleLocal,
+  onAddRule,
 }) {
   const [ruleForm, setRuleForm] = useState({
     zone_id: 'zone-north',
@@ -37,9 +37,9 @@ export default function AlertDashboardPresentation({
     average: typeof m.average === 'number' ? m.average : Number(m.average) || 0,
   }))
 
-  function submitRule(e) {
+  async function submitRule(e) {
     e.preventDefault()
-    onAddRuleLocal({
+    await onAddRule({
       zone_id: ruleForm.zone_id,
       metric_type: ruleForm.metric_type,
       threshold: Number(ruleForm.threshold),
@@ -84,6 +84,16 @@ export default function AlertDashboardPresentation({
         </button>
       </div>
 
+      <div>
+        <h3>Simulation</h3>
+        <button type="button" onClick={onStartSim}>
+          Start simulation
+        </button>{' '}
+        <button type="button" onClick={onStopSim}>
+          Stop simulation
+        </button>
+      </div>
+
       {snapshot.loading ? <p>Loading…</p> : null}
       {snapshot.error ? <p role="alert">{snapshot.error}</p> : null}
       {stubNote.length > 0 ? (
@@ -107,14 +117,6 @@ export default function AlertDashboardPresentation({
 
       {mode === DASHBOARD_MODE.operator && (
         <div>
-          <h3>Simulation</h3>
-          <button type="button" onClick={onStartSim}>
-            POST /sim/start
-          </button>{' '}
-          <button type="button" onClick={onStopSim}>
-            POST /sim/stop
-          </button>
-
           <h3>Alerts</h3>
           <table border={1} cellPadding={4}>
             <thead>
@@ -179,7 +181,6 @@ export default function AlertDashboardPresentation({
       {mode === DASHBOARD_MODE.admin && (
         <div>
           <h3>Alert rules</h3>
-          <p>TODO: wire POST/PATCH/DELETE when Flask exposes /admin/rules</p>
           <table border={1} cellPadding={4}>
             <thead>
               <tr>
@@ -207,7 +208,7 @@ export default function AlertDashboardPresentation({
             </tbody>
           </table>
 
-          <h4>Add rule (client only until API exists)</h4>
+          <h4>Add rule</h4>
           <form onSubmit={submitRule}>
             <label>
               zone_id{' '}
