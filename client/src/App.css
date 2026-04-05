@@ -182,3 +182,7 @@
     border-right-color: var(--border);
   }
 }
+
+.success {
+  color:rgb(218, 255, 180)
+}
