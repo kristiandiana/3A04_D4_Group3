@@ -15,6 +15,26 @@ export default defineConfig({
         target: 'http://localhost:5000',
         changeOrigin: true,
         secure: false
+      },
+      '/public': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+        secure: false
+      },
+      '/operator': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+        secure: false
+      },
+      '/admin': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+        secure: false
+      },
+      '/sim': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+        secure: false
       }
     }
   }

@@ -36,6 +36,7 @@ export default function SignupPresentation({name, setName, email, setEmail, pass
                 onChange={(e) => setPassword(e.target.value)}
                 />
                 <button type="submit">Sign Up</button>
+                {error ? <p role="alert">{error}</p> : null}
             </form>
             <a href="#" onClick={(e) => {
                 e.preventDefault();

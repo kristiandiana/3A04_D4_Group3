@@ -6,7 +6,11 @@ public_bp = Blueprint("public_bp", __name__)
 @public_bp.route("/public/metrics", methods=["GET"])
 def get_metrics():
     repo = current_app.config["repo"]
-    latest = [aggregate.__dict__ for aggregate in repo.aggregates[-10:]]
+    latest = []
+    for aggregate in repo.aggregates[-10:]:
+        row = aggregate.__dict__.copy()
+        row["timestamp"] = row["timestamp"].isoformat()
+        latest.append(row)
     return jsonify(latest)
 
 

@@ -24,6 +24,7 @@ export default function LoginPresentation({ email, setEmail, password, setPasswo
           onChange={(e) => setPassword(e.target.value)}
         />
         <button type="submit">Login</button>
+        {error ? <p role="alert">{error}</p> : null}
       </form>
       <a href="#" onClick={(e) => {
           e.preventDefault();

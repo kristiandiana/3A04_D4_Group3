@@ -28,7 +28,7 @@ export default function LoginController({ onLoginSuccess, onGoToSignup }) {
                 console.log("ruh roh raggy");
                 setError(res.message || 'Login failed');
             }
-        } catch (err) {
+        } catch {
             setError('An error occurred during login');
         }
     }
