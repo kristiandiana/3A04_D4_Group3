@@ -15,3 +15,9 @@ def stop_sim():
     simulator = current_app.config["simulator"]
     simulator.stop()
     return jsonify({"status": "simulation stopped"})
+
+
+@sim_bp.route("/sim/status", methods=["GET"])
+def simulation_status():
+    simulator = current_app.config["simulator"]
+    return jsonify({"running": simulator.running})

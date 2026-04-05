@@ -66,6 +66,17 @@ def create_app():
         )
     )
 
+    repo.add_rule(
+        AlertRule(
+            rule_id=5,
+            zone_id="zone-central",
+            metric_type="humidity",
+            threshold=75,
+            comparator=">",
+            severity="warning"
+        )
+    )
+
     #example industrial plants for advisory integration
     repo.plants_by_zone["zone-north"].append("North Industrial Plant")
     repo.plants_by_zone["zone-central"].append("Central Processing Facility")
@@ -89,9 +100,12 @@ def create_app():
             "available_routes": {
                 "public": [
                     "/public/metrics",
-                    "/public/alerts"
+                    "/public/alerts",
+                    "/public/zones",
+                    "/public/zones/<zone_id>/summary"
                 ],
                 "operator": [
+                    "/operator/alerts",
                     "/operator/alerts/<id>/ack",
                     "/operator/alerts/<id>/resolve"
                 ],
@@ -102,7 +116,8 @@ def create_app():
                 ],
                 "simulation": [
                     "/sim/start",
-                    "/sim/stop"
+                    "/sim/stop",
+                    "/sim/status"
                 ],
                 "test_page": [
                     "/test"

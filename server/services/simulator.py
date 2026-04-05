@@ -17,8 +17,10 @@ class SensorSimulator:
         self.sensors: List[Dict] = [
             {"sensor_id": "aq-001", "zone_id": "zone-north", "metric_type": "aqi", "unit": "index"},
             {"sensor_id": "tmp-001", "zone_id": "zone-north", "metric_type": "temperature", "unit": "C"},
+            {"sensor_id": "hum-001", "zone_id": "zone-north", "metric_type": "humidity", "unit": "%"},
             {"sensor_id": "noi-001", "zone_id": "zone-central", "metric_type": "noise", "unit": "dB"},
             {"sensor_id": "aq-002", "zone_id": "zone-central", "metric_type": "aqi", "unit": "index"},
+            {"sensor_id": "hum-002", "zone_id": "zone-central", "metric_type": "humidity", "unit": "%"},
         ]
 
     def start(self) -> None:
@@ -45,6 +47,8 @@ class SensorSimulator:
             value = random.uniform(60, 160)
         elif metric == "temperature":
             value = random.uniform(18, 40)
+        elif metric == "humidity":
+            value = random.uniform(35, 90)
         elif metric == "noise":
             value = random.uniform(45, 95)
         else:

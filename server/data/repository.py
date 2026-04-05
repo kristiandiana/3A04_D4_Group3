@@ -26,6 +26,25 @@ class Repository:
     def add_aggregate(self, aggregate: AggregatedMetric) -> None:
         self.aggregates.append(aggregate)
 
+    def get_aggregates(
+        self,
+        zone_id: Optional[str] = None,
+        metric_type: Optional[str] = None,
+        limit: Optional[int] = None,
+    ) -> List[AggregatedMetric]:
+        aggregates = self.aggregates
+
+        if zone_id is not None:
+            aggregates = [aggregate for aggregate in aggregates if aggregate.zone_id == zone_id]
+
+        if metric_type is not None:
+            aggregates = [aggregate for aggregate in aggregates if aggregate.metric_type == metric_type]
+
+        if limit is not None:
+            return aggregates[-limit:]
+
+        return list(aggregates)
+
     def add_rule(self, rule: AlertRule) -> None:
         if any(existing.rule_id == rule.rule_id for existing in self.alert_rules):
             raise ValueError(f"Rule with id {rule.rule_id} already exists")
@@ -94,8 +113,65 @@ class Repository:
                 return alert
         return None
 
-    def get_active_alerts(self) -> List[Alert]:
-        return [alert for alert in self.alerts if alert.status in ("active", "acknowledged")]
+    def get_alerts(
+        self,
+        zone_id: Optional[str] = None,
+        statuses: Optional[List[str]] = None,
+        limit: Optional[int] = None,
+    ) -> List[Alert]:
+        alerts = self.alerts
+
+        if zone_id is not None:
+            alerts = [alert for alert in alerts if alert.zone_id == zone_id]
+
+        if statuses is not None:
+            allowed_statuses = set(statuses)
+            alerts = [alert for alert in alerts if alert.status in allowed_statuses]
+
+        if limit is not None:
+            return alerts[-limit:]
+
+        return list(alerts)
+
+    def get_active_alerts(self, zone_id: Optional[str] = None) -> List[Alert]:
+        return self.get_alerts(zone_id=zone_id, statuses=["active", "acknowledged"])
+
+    def get_latest_metrics_for_zone(self, zone_id: str) -> Dict[str, AggregatedMetric]:
+        latest_by_metric: Dict[str, AggregatedMetric] = {}
+
+        for aggregate in self.aggregates:
+            if aggregate.zone_id != zone_id:
+                continue
+            latest_by_metric[aggregate.metric_type] = aggregate
+
+        return latest_by_metric
+
+    def get_known_metrics_for_zone(self, zone_id: str) -> List[str]:
+        metrics = {
+            rule.metric_type for rule in self.alert_rules if rule.zone_id == zone_id
+        }
+        metrics.update(
+            reading.metric_type for reading in self.sensor_readings if reading.zone_id == zone_id
+        )
+        metrics.update(
+            aggregate.metric_type for aggregate in self.aggregates if aggregate.zone_id == zone_id
+        )
+        metrics.update(
+            alert.metric_type for alert in self.alerts if alert.zone_id == zone_id
+        )
+        metrics.update(
+            advisory.metric_type for advisory in self.advisories if advisory.zone_id == zone_id
+        )
+        return sorted(metrics)
+
+    def get_known_zones(self) -> List[str]:
+        zones = set(self.plants_by_zone.keys())
+        zones.update(rule.zone_id for rule in self.alert_rules)
+        zones.update(reading.zone_id for reading in self.sensor_readings)
+        zones.update(aggregate.zone_id for aggregate in self.aggregates)
+        zones.update(alert.zone_id for alert in self.alerts)
+        zones.update(advisory.zone_id for advisory in self.advisories)
+        return sorted(zones)
 
     def create_advisory(self, plant_name: str, zone_id: str, metric_type: str, message: str) -> Advisory:
         advisory = Advisory(

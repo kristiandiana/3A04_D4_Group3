@@ -1,7 +1,48 @@
 from datetime import datetime
-from flask import Blueprint, jsonify, current_app
+from flask import Blueprint, jsonify, current_app, request
 
 operator_bp = Blueprint("operator_bp", __name__)
+
+
+def _serialize_alert(alert):
+    return {
+        "alert_id": alert.alert_id,
+        "zone_id": alert.zone_id,
+        "metric_type": alert.metric_type,
+        "current_value": alert.current_value,
+        "threshold": alert.threshold,
+        "severity": alert.severity,
+        "status": alert.status,
+        "message": alert.message,
+        "created_at": alert.created_at.isoformat(),
+        "acknowledged_by": alert.acknowledged_by,
+        "acknowledged_at": alert.acknowledged_at.isoformat() if alert.acknowledged_at else None,
+        "resolved_by": alert.resolved_by,
+        "resolved_at": alert.resolved_at.isoformat() if alert.resolved_at else None,
+    }
+
+
+@operator_bp.route("/operator/alerts", methods=["GET"])
+def get_operator_alerts():
+    repo = current_app.config["repo"]
+    zone_id = request.args.get("zone_id")
+    status = request.args.get("status")
+    raw_limit = request.args.get("limit", "50")
+
+    try:
+        limit = int(raw_limit)
+    except (TypeError, ValueError):
+        return jsonify({"error": "limit must be an integer"}), 400
+
+    if limit < 1 or limit > 200:
+        return jsonify({"error": "limit must be between 1 and 200"}), 400
+
+    if status:
+        alerts = repo.get_alerts(zone_id=zone_id, statuses=[status], limit=limit)
+    else:
+        alerts = repo.get_active_alerts(zone_id=zone_id)[-limit:]
+
+    return jsonify([_serialize_alert(alert) for alert in alerts])
 
 
 @operator_bp.route("/operator/alerts/<int:alert_id>/ack", methods=["POST"])
