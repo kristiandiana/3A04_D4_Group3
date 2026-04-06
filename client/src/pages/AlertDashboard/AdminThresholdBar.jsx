@@ -1,6 +1,9 @@
 /**
  * Horizontal scale: green = within rule (no alert), red = violation band.
  * Marker shows latest aggregate average when available.
+ *
+ * Bounds are fixed per metric (from backend simulator ranges) so thresholds
+ * and current values are comparable across rules instead of auto-rescaled.
  */
 function violates(value, threshold, comparator) {
   switch (comparator) {
@@ -17,25 +20,28 @@ function violates(value, threshold, comparator) {
   }
 }
 
-function domainForRule(threshold, value) {
-  const v = value != null && Number.isFinite(value) ? value : threshold
-  let lo = Math.min(threshold, v)
-  let hi = Math.max(threshold, v)
-  const span = hi - lo || Math.max(Math.abs(threshold), 1)
-  const pad = span * 0.2
-  return { min: lo - pad, max: hi + pad }
+const METRIC_DOMAINS = {
+  aqi: { min: 60, max: 160 },
+  temperature: { min: 18, max: 40 },
+  humidity: { min: 35, max: 90 },
+  noise: { min: 45, max: 95 },
+}
+
+function domainForMetric(metricType) {
+  return METRIC_DOMAINS[metricType] || { min: 0, max: 100 }
 }
 
 function pct(v, min, max) {
   if (max <= min) return 50
-  return ((v - min) / (max - min)) * 100
+  const raw = ((v - min) / (max - min)) * 100
+  return Math.max(0, Math.min(100, raw))
 }
 
 export default function AdminThresholdBar({ rule, latestAverage }) {
   const { threshold, comparator, metric_type, zone_id, enabled } = rule
   const t = Number(threshold)
   const val = latestAverage != null && Number.isFinite(Number(latestAverage)) ? Number(latestAverage) : null
-  const { min, max } = domainForRule(t, val)
+  const { min, max } = domainForMetric(metric_type)
   const tPos = pct(t, min, max)
   const inViolation = val != null ? violates(val, t, comparator) : null
 
