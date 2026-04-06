@@ -738,6 +738,66 @@ button:disabled {
   color: var(--text);
 }
 
+.operator-map-popup__health {
+  margin-top: 6px;
+  margin-bottom: 8px;
+  font-size: 0.85rem;
+}
+
+.operator-map-popup__counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.operator-map-popup__metrics {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.operator-map-popup__metric-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 8px;
+  align-items: center;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-2);
+  font-size: 0.82rem;
+}
+
+.operator-map-popup__metric-row--alert {
+  border-color: rgba(202, 138, 4, 0.5);
+}
+
+.operator-map-popup__metric-row--critical {
+  border-color: rgba(185, 28, 28, 0.45);
+  background: rgba(254, 242, 242, 0.9);
+}
+
+.operator-map-popup__metric-name {
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.operator-map-popup__metric-reading {
+  font-family: var(--mono);
+  color: var(--text-h);
+}
+
+.operator-map-popup__metric-status {
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--text);
+}
+
 .leaflet-container {
   font: inherit;
 }
@@ -929,7 +989,8 @@ button:disabled {
 }
 
 .admin-rules-card,
-.admin-histogram-card {
+.admin-histogram-card,
+.admin-audit-card {
   flex-direction: column;
   align-items: stretch;
   gap: 20px;
@@ -1162,6 +1223,71 @@ button:disabled {
   justify-content: space-between;
   margin-top: 6px;
   font-size: 0.75rem;
+}
+
+.admin-audit-card__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-end;
+}
+
+.admin-audit-card__heading {
+  margin: 0 0 6px;
+  font-size: 1.15rem;
+  color: var(--text-h);
+}
+
+.admin-audit-card__sub {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.admin-audit-card__filter {
+  min-width: 180px;
+}
+
+.admin-audit-list-scroll {
+  max-height: 380px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-2);
+}
+
+.admin-audit-item {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admin-audit-item__top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.admin-audit-item__details {
+  margin: 0;
+  color: var(--text-h);
+  font-size: 0.9rem;
+}
+
+.admin-audit-item__meta {
+  margin: 0;
+  font-size: 0.8rem;
+}
+
+.admin-audit-none-matching {
+  margin: 10px;
 }
 
 @media (max-width: 768px) {
