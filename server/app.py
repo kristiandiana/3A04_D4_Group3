@@ -176,7 +176,9 @@ def create_app(config: dict | None = None):
                 "admin": [
                     "/admin/audit",
                     "/admin/advisories",
+                    "/admin/metrics/latest",
                     "/admin/rules",
+                    "/admin/rules/<id> (DELETE)",
                 ],
                 "simulation": [
                     "/sim/start",

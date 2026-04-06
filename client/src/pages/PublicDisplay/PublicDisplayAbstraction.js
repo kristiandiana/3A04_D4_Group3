@@ -1,11 +1,7 @@
 let listeners = new Set()
 
 const initialState = {
-  zones: [],
-  selectedZone: '',
-  metrics: [],
-  alerts: [],
-  activeAlertCount: 0,
+  zoneSummaries: [],
   simulationRunning: false,
   loading: false,
   error: '',
@@ -51,8 +47,4 @@ export function setPublicDisplayError(error) {
     error,
     loading: false,
   })
-}
-
-export function setSelectedZone(selectedZone) {
-  setPublicDisplayState({ selectedZone })
 }

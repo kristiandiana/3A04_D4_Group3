@@ -2,6 +2,8 @@ let listeners = new Set()
 
 const initialState = {
   alerts: [],
+  rules: [],
+  metrics: [],
   loading: false,
   error: '',
   actingAlertId: null,
@@ -33,17 +35,27 @@ export function setAlertDashboardState(partial) {
 }
 
 export function mergeAlertDashboardState(payload) {
+  const prev = state
   const alerts = Array.isArray(payload?.alerts) ? payload.alerts : []
 
-  setAlertDashboardState({
+  const updates = {
     alerts,
     simulationRunning: Boolean(payload?.simulationRunning),
-    simulationTransport: payload?.simulationTransport ?? 'direct',
+    simulationTransport: payload?.simulationTransport ?? prev.simulationTransport,
     mqttStatus: payload?.mqttStatus ?? null,
     loading: false,
     error: '',
     lastUpdatedAt: Date.now(),
-  })
+  }
+
+  if (Array.isArray(payload?.rules)) {
+    updates.rules = payload.rules
+  }
+  if (Array.isArray(payload?.metrics)) {
+    updates.metrics = payload.metrics
+  }
+
+  setAlertDashboardState(updates)
 }
 
 export function setAlertDashboardLoading(loading) {

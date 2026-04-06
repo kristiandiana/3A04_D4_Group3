@@ -113,7 +113,6 @@ def get_zones():
         zones.append({
             "zone_id": zone_id,
             "available_metrics": repo.get_known_metrics_for_zone(zone_id),
-            "active_alert_count": len(repo.get_active_alerts(zone_id=zone_id)),
         })
 
     return jsonify(zones)
@@ -130,7 +129,6 @@ def get_zone_summary(zone_id: str):
     payload = {
         "zone_id": zone_id,
         "metrics": repo.get_zone_summary(zone_id),
-        "active_alert_count": len(repo.get_active_alerts(zone_id=zone_id)),
     }
 
     return jsonify(payload)
