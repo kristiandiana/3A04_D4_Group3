@@ -1,7 +1,8 @@
 export default function AdvisoryPresentation() {
     return (
-        <div>
-            <h3>Submit an Advisory Form</h3>
+        <div className="page-shell">
+            <h2>Advisory Form</h2>
+            <p className="muted-copy">Submit details below for operator review.</p>
             <form action="">
                 <div>
                     <label>Subject:</label>

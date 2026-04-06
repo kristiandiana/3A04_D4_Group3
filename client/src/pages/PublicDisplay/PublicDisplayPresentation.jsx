@@ -12,43 +12,57 @@ function formatZone(zoneId) {
     .join(' ')
 }
 
-function formatMetricLabel(metricType) {
+/** Title for the green header (e.g. AQI not Aqi). */
+function formatMetricTitle(metricType) {
+  const special = {
+    aqi: 'AQI',
+    humidity: 'Humidity',
+    noise: 'Noise',
+    temperature: 'Temperature',
+  }
+  if (special[metricType]) return special[metricType]
   return metricType
     .split('-')
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(' ')
 }
 
-function formatMetricValue(metric) {
+function formatOptionalFixed(value, digits = 1) {
+  if (value == null || Number.isNaN(Number(value))) return 'n/a'
+  return Number(value).toFixed(digits)
+}
+
+function formatMetricPrimary(metric) {
   const unit = METRIC_UNITS[metric.metric_type] ?? ''
   if (metric.five_minute_average == null) {
     return 'Waiting...'
   }
-  return `${metric.five_minute_average.toFixed(1)} ${unit}`.trim()
+  return `${formatOptionalFixed(metric.five_minute_average)} ${unit}`.trim()
+}
+
+function formatValueWithUnit(metricType, value) {
+  const unit = METRIC_UNITS[metricType] ?? ''
+  if (value == null || Number.isNaN(Number(value))) return 'n/a'
+  return `${formatOptionalFixed(value)} ${unit}`.trim()
 }
 
 export default function PublicDisplayPresentation({
   title,
-  zones,
-  selectedZone,
-  metrics,
-  alerts,
-  activeAlertCount,
+  zoneSummaries,
   simulationRunning,
   loading,
   error,
   lastUpdatedAt,
-  onZoneChange,
   onRefresh,
 }) {
   return (
     <section className="page-shell public-display">
       <div className="panel-header">
         <div>
-          <p className="eyebrow">Read-Only Public API Client</p>
+          <p className="eyebrow">Aggregated environmental metrics</p>
           <h2>{title}</h2>
           <p className="muted-copy">
-            {selectedZone ? formatZone(selectedZone) : 'No zone selected'} · Last refresh{' '}
+            All zones · Last refresh{' '}
             {lastUpdatedAt ? new Date(lastUpdatedAt).toLocaleTimeString() : 'pending'}
           </p>
         </div>
@@ -64,71 +78,47 @@ export default function PublicDisplayPresentation({
 
       {error && <p className="error-banner">{error}</p>}
 
-      <div className="toolbar-card">
-        <label className="select-field">
-          <span>Display zone</span>
-          <select value={selectedZone} onChange={(event) => onZoneChange(event.target.value)}>
-            {zones.map((zone) => (
-              <option key={zone.zone_id} value={zone.zone_id}>
-                {formatZone(zone.zone_id)}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <article className="stat-card compact">
-          <span className="stat-label">Active alerts in zone</span>
-          <strong>{activeAlertCount}</strong>
+      {zoneSummaries.length === 0 && !error && (
+        <article className="empty-card">
+          <h3>No zones yet</h3>
+          <p>When the demo feed runs, zone summaries will appear here.</p>
         </article>
-      </div>
+      )}
 
-      <div className="metric-grid">
-        {metrics.length === 0 && (
-          <article className="empty-card">
-            <h3>No live telemetry yet</h3>
-            <p>An authenticated operator can start the demo feed from the alert dashboard.</p>
-          </article>
-        )}
+      {zoneSummaries.map(({ zone_id: zoneId, metrics }) => (
+        <div key={zoneId} className="public-zone-panel">
+          <h3 className="public-zone-panel__title">{formatZone(zoneId)}</h3>
+          <div className="metric-grid">
+            {metrics.length === 0 && (
+              <article className="empty-card">
+                <h3>No live telemetry yet</h3>
+                <p>An operator can start the demo feed from the alert dashboard.</p>
+              </article>
+            )}
 
-        {metrics.map((metric) => (
-          <article key={metric.metric_type} className="metric-card">
-            <p className="eyebrow">{formatMetricLabel(metric.metric_type)}</p>
-            <strong>{formatMetricValue(metric)}</strong>
-            <span className="muted-copy">
-              5-minute max {metric.five_minute_maximum?.toFixed(1) ?? 'n/a'}
-            </span>
-            <span className="muted-copy">
-              Hourly max {metric.hourly_maximum?.toFixed(1) ?? 'n/a'}
-            </span>
-          </article>
-        ))}
-      </div>
-
-      <div className="alert-list">
-        {alerts.length === 0 && (
-          <article className="empty-card">
-            <h3>No active public alerts</h3>
-            <p>The selected zone currently has no active or acknowledged alerts.</p>
-          </article>
-        )}
-
-        {alerts.map((alert) => (
-          <article key={alert.alert_id} className={`alert-card severity-${alert.severity}`}>
-            <div className="alert-card-header">
-              <div>
-                <p className="eyebrow">{alert.metric_type.toUpperCase()}</p>
-                <h3>{alert.message}</h3>
-              </div>
-              <span className={`status-pill severity-${alert.severity}`}>{alert.severity}</span>
-            </div>
-            <div className="alert-metadata">
-              <span>Status {alert.status}</span>
-              <span>Current {alert.current_value}</span>
-              <span>Threshold {alert.threshold}</span>
-            </div>
-          </article>
-        ))}
-      </div>
+            {metrics.map((metric) => (
+              <article key={metric.metric_type} className="metric-card">
+                <p className="eyebrow">
+                  {formatMetricTitle(metric.metric_type)} (5-minute average)
+                </p>
+                <strong>{formatMetricPrimary(metric)}</strong>
+                <p className="muted-copy public-metric-detail-line">
+                  5-minute minimum {formatValueWithUnit(metric.metric_type, metric.five_minute_minimum)}
+                </p>
+                <p className="muted-copy public-metric-detail-line">
+                  5-minute maximum {formatValueWithUnit(metric.metric_type, metric.five_minute_maximum)}
+                </p>
+                <p className="muted-copy public-metric-detail-line">
+                  Hourly average {formatValueWithUnit(metric.metric_type, metric.hourly_average)}
+                </p>
+                <p className="muted-copy public-metric-detail-line">
+                  Hourly maximum {formatValueWithUnit(metric.metric_type, metric.hourly_maximum)}
+                </p>
+              </article>
+            ))}
+          </div>
+        </div>
+      ))}
     </section>
   )
 }

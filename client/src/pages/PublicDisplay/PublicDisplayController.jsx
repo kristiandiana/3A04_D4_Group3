@@ -1,4 +1,4 @@
-import { startTransition, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { fetchJson } from '../../lib/api.js'
 import PublicDisplayPresentation from './PublicDisplayPresentation.jsx'
@@ -7,37 +7,28 @@ import {
   mergePublicDisplayState,
   setPublicDisplayError,
   setPublicDisplayLoading,
-  setSelectedZone,
   subscribePublicDisplay,
 } from './PublicDisplayAbstraction.js'
 
-async function refreshPublicDisplay(preferredZoneId) {
+async function refreshPublicDisplay() {
   setPublicDisplayLoading(true)
 
   try {
     const zones = await fetchJson('/public/zones')
-    const currentZoneId =
-      preferredZoneId ||
-      getPublicDisplayState().selectedZone ||
-      zones[0]?.zone_id ||
-      ''
+    const simulationStatus = await fetchJson('/sim/status')
 
-    const [simulationStatus, summary, alerts] = await Promise.all([
-      fetchJson('/sim/status'),
-      currentZoneId
-        ? fetchJson(`/public/zones/${currentZoneId}/summary`)
-        : Promise.resolve({ metrics: [], active_alert_count: 0 }),
-      currentZoneId
-        ? fetchJson('/public/alerts', {}, { zone_id: currentZoneId, limit: 8 })
-        : Promise.resolve([]),
-    ])
+    const zoneSummaries = await Promise.all(
+      zones.map(async (z) => {
+        const summary = await fetchJson(`/public/zones/${z.zone_id}/summary`)
+        return {
+          zone_id: z.zone_id,
+          metrics: summary.metrics ?? [],
+        }
+      }),
+    )
 
     mergePublicDisplayState({
-      zones,
-      selectedZone: currentZoneId,
-      metrics: summary.metrics ?? [],
-      alerts,
-      activeAlertCount: summary.active_alert_count ?? 0,
+      zoneSummaries,
       simulationRunning: Boolean(simulationStatus.running),
     })
   } catch (error) {
@@ -59,27 +50,15 @@ export default function PublicDisplayController() {
     return () => window.clearInterval(intervalId)
   }, [])
 
-  function handleZoneChange(nextZoneId) {
-    setSelectedZone(nextZoneId)
-    startTransition(() => {
-      void refreshPublicDisplay(nextZoneId)
-    })
-  }
-
   return (
     <PublicDisplayPresentation
-      title="Public Environmental Display"
-      zones={snapshot.zones}
-      selectedZone={snapshot.selectedZone}
-      metrics={snapshot.metrics}
-      alerts={snapshot.alerts}
-      activeAlertCount={snapshot.activeAlertCount}
+      title="Public Display"
+      zoneSummaries={snapshot.zoneSummaries}
       simulationRunning={snapshot.simulationRunning}
       loading={snapshot.loading}
       error={snapshot.error}
       lastUpdatedAt={snapshot.lastUpdatedAt}
-      onZoneChange={handleZoneChange}
-      onRefresh={() => void refreshPublicDisplay(snapshot.selectedZone)}
+      onRefresh={() => void refreshPublicDisplay()}
     />
   )
 }

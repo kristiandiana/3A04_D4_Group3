@@ -7,6 +7,22 @@ admin_bp = Blueprint("admin_bp", __name__)
 
 VALID_COMPARATORS = {">", "<", ">=", "<="}
 VALID_SEVERITIES = {"warning", "critical"}
+VALID_METRIC_WINDOWS = {"5min", "hourly"}
+
+
+def _serialize_aggregate(aggregate):
+    return {
+        "zone_id": aggregate.zone_id,
+        "metric_type": aggregate.metric_type,
+        "average": aggregate.average,
+        "minimum": aggregate.minimum,
+        "maximum": aggregate.maximum,
+        "count": aggregate.count,
+        "timestamp": aggregate.timestamp.isoformat(),
+        "window_type": aggregate.window_type,
+        "window_start": aggregate.window_start.isoformat() if aggregate.window_start else None,
+        "window_end": aggregate.window_end.isoformat() if aggregate.window_end else None,
+    }
 
 
 def _serialize_rule(rule):
@@ -109,6 +125,19 @@ def get_rules():
     return jsonify([_serialize_rule(rule) for rule in repo.get_all_rules()])
 
 
+@admin_bp.route("/admin/metrics/latest", methods=["GET"])
+@require_role("admin")
+def get_metrics_latest():
+    """Latest aggregate per (zone_id, metric_type) for dashboards (not limited to N recent rows globally)."""
+    repo = current_app.config["repo"]
+    window_type = request.args.get("window_type", "5min")
+    if window_type not in VALID_METRIC_WINDOWS:
+        return jsonify({"error": f"window_type must be one of {sorted(VALID_METRIC_WINDOWS)}"}), 400
+
+    aggregates = repo.get_latest_aggregates_per_series(window_type)
+    return jsonify([_serialize_aggregate(a) for a in aggregates])
+
+
 @admin_bp.route("/admin/rules", methods=["POST"])
 @require_role("admin")
 def create_rule():
@@ -131,3 +160,20 @@ def create_rule():
     )
 
     return jsonify(_serialize_rule(rule)), 201
+
+
+@admin_bp.route("/admin/rules/<int:rule_id>", methods=["DELETE"])
+@require_role("admin")
+def delete_rule(rule_id):
+    repo = current_app.config["repo"]
+    deleted = repo.delete_rule(rule_id)
+    if not deleted:
+        return jsonify({"error": "Rule not found"}), 404
+
+    actor = get_authenticated_user()
+    repo.add_audit_log(
+        "RULE_DELETED",
+        actor.email,
+        f"rule_id={rule_id}",
+    )
+    return "", 204

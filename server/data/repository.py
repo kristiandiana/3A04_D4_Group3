@@ -409,6 +409,29 @@ class Repository:
 
         return self._row_to_aggregate(row) if row else None
 
+    def get_latest_aggregates_per_series(self, window_type: str) -> List[AggregatedMetric]:
+        """One row per (zone_id, metric_type): the aggregate with the latest updated_at."""
+        with self._lock:
+            rows = self.conn.execute(
+                """
+                SELECT a.*
+                FROM aggregated_metrics AS a
+                INNER JOIN (
+                    SELECT zone_id, metric_type, MAX(updated_at) AS max_updated
+                    FROM aggregated_metrics
+                    WHERE window_type = ?
+                    GROUP BY zone_id, metric_type
+                ) AS latest
+                ON a.zone_id = latest.zone_id
+                AND a.metric_type = latest.metric_type
+                AND a.updated_at = latest.max_updated
+                AND a.window_type = ?
+                """,
+                (window_type, window_type),
+            ).fetchall()
+
+        return [self._row_to_aggregate(row) for row in rows]
+
     def get_zone_summary(self, zone_id: str) -> List[Dict]:
         summaries = []
 
@@ -506,6 +529,12 @@ class Repository:
             ).fetchall()
 
         return [self._row_to_rule(row) for row in rows]
+
+    def delete_rule(self, rule_id: int) -> bool:
+        with self._lock:
+            cursor = self.conn.execute("DELETE FROM alert_rules WHERE rule_id = ?", (rule_id,))
+            self.conn.commit()
+            return cursor.rowcount > 0
 
     def get_active_rules(self, zone_id: str, metric_type: str) -> List[AlertRule]:
         with self._lock:
